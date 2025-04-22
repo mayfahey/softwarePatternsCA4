@@ -1,10 +1,10 @@
 package com.example.softwarePatternsCA4.service;
 
 import com.example.softwarePatternsCA4.entity.*;
+import com.example.softwarePatternsCA4.factory.OrderItemFactory;
 import com.example.softwarePatternsCA4.repository.BookRepository;
 import com.example.softwarePatternsCA4.repository.OrderItemRepository;
 import com.example.softwarePatternsCA4.repository.OrderRepository;
-import com.example.softwarePatternsCA4.repository.ShoppingCartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +19,19 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final ShoppingCartService cartService;
     private final BookRepository bookRepository;
+    private final OrderItemFactory orderItemFactory;
 
     @Autowired
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         ShoppingCartService cartService,
-                        BookRepository bookRepository) {
+                        BookRepository bookRepository,
+                        OrderItemFactory orderItemFactory) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.cartService = cartService;
         this.bookRepository = bookRepository;
+        this.orderItemFactory = orderItemFactory;
     }
 
     public Order checkout(CustomerProfile customer, String paymentMethod, String shippingAddress) {
@@ -48,15 +51,10 @@ public class OrderService {
         order.setCustomer(customer);
         order = orderRepository.save(order);
 
-        // Convert CartItems to OrderItems
+        // Convert CartItems to OrderItems using Factory Pattern
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem item : cartItems) {
-            OrderItem orderItem = new OrderItem(
-                item.getBook(),
-                item.getQuantity(),
-                item.getPriceAtTime(),
-                order
-            );
+            OrderItem orderItem = orderItemFactory.create(item.getBook(), item.getQuantity(), order);
             orderItems.add(orderItem);
 
             // Update stock
