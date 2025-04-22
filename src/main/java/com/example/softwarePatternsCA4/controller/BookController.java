@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/books")  // Base path for all book-related endpoints
+@RequestMapping("/api/books")
 public class BookController {
 
     private final BookService bookService;
@@ -91,5 +91,15 @@ public class BookController {
     public List<Book> searchByPublisher(@RequestParam String publisher) {
         return bookService.searchByPublisher(publisher);
     }
-}
 
+    // Get sorted books using strategy pattern
+    @GetMapping("/sorted")
+    public ResponseEntity<?> getSortedBooks(@RequestParam String sortType) {
+        try {
+            List<Book> sortedBooks = bookService.getSortedBooks(sortType);
+            return ResponseEntity.ok(sortedBooks);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid sort type. Try 'titleAsc', 'authorAsc', or 'priceDesc'.");
+        }
+    }
+}
