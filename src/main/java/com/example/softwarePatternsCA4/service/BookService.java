@@ -2,11 +2,7 @@ package com.example.softwarePatternsCA4.service;
 
 import com.example.softwarePatternsCA4.entity.Book;
 import com.example.softwarePatternsCA4.repository.BookRepository;
-import com.example.softwarePatternsCA4.strategy.BookSortContext;
-import com.example.softwarePatternsCA4.strategy.SortByAuthorAscending;
-import com.example.softwarePatternsCA4.strategy.SortByPriceDescending;
-import com.example.softwarePatternsCA4.strategy.SortByTitleAscending;
-
+import com.example.softwarePatternsCA4.strategy.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +14,6 @@ public class BookService {
 
     private final BookRepository bookRepository;
 
-    // Constructor injection
     @Autowired
     public BookService(BookRepository bookRepository) {
         this.bookRepository = bookRepository;
@@ -61,14 +56,17 @@ public class BookService {
         return bookRepository.findByPublisherContainingIgnoreCase(publisher);
     }
 
-    // Strategy Pattern to sort books based on input
+    // Strategy Pattern - Sort books based on input
     public List<Book> getSortedBooks(String sortType) {
         List<Book> books = bookRepository.findAll();
         BookSortContext context = new BookSortContext();
 
         switch (sortType.toLowerCase()) {
             case "titleasc" -> context.setStrategy(new SortByTitleAscending());
+            case "titledesc" -> context.setStrategy(new SortByTitleDescending());
             case "authorasc" -> context.setStrategy(new SortByAuthorAscending());
+            case "authordesc" -> context.setStrategy(new SortByAuthorDescending());
+            case "priceasc" -> context.setStrategy(new SortByPriceAscending());
             case "pricedesc" -> context.setStrategy(new SortByPriceDescending());
             default -> throw new IllegalArgumentException("Invalid sort type: " + sortType);
         }
