@@ -1,5 +1,9 @@
 package com.example.softwarePatternsCA4.service;
 
+import com.example.softwarePatternsCA4.decorator.BasePriceCalculator;
+import com.example.softwarePatternsCA4.decorator.LoyaltyDiscountDecorator;
+import com.example.softwarePatternsCA4.decorator.PercentageDiscountDecorator;
+import com.example.softwarePatternsCA4.decorator.PriceCalculator;
 import com.example.softwarePatternsCA4.entity.*;
 import com.example.softwarePatternsCA4.factory.OrderItemFactory;
 import com.example.softwarePatternsCA4.observer.OrderEventPublisher;
@@ -11,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,16 +59,21 @@ public class OrderService {
             throw new RuntimeException("Cart is empty.");
         }
 
+        // Decorator Pattern - apply dynamic discounts
+        PriceCalculator calculator = new BasePriceCalculator(cart);
+        calculator = new PercentageDiscountDecorator(calculator, BigDecimal.valueOf(0.10)); // 10% off for promo
+        calculator = new LoyaltyDiscountDecorator(calculator, customer); // loyalty points based discount
+
         // Create new Order
         Order order = new Order();
         order.setOrderDate(LocalDateTime.now());
-        order.setTotalAmount(cart.getTotal());
+        order.setTotalAmount(calculator.calculateTotal()); // gets total including discount
         order.setPaymentMethod(paymentMethod);
         order.setShippingAddress(shippingAddress);
         order.setCustomer(customer);
         order = orderRepository.save(order);
 
-        // Convert CartItems to OrderItems using Factory Pattern
+        // Convert CartItems to OrderItems using factory pattern
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem item : cartItems) {
             OrderItem orderItem = orderItemFactory.create(item.getBook(), item.getQuantity(), order);
