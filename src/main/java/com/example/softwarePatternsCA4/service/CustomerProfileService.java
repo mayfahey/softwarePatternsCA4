@@ -6,6 +6,7 @@ import com.example.softwarePatternsCA4.repository.CustomerProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -31,6 +32,11 @@ public class CustomerProfileService {
     // Get profile by User
     public Optional<CustomerProfile> getProfileByUser(User user) {
         return customerProfileRepository.findByUser(user);
+    }
+
+    // Get all profiles
+    public List<CustomerProfile> getAllProfiles() {
+        return customerProfileRepository.findAll();
     }
 
     // Delete profile
