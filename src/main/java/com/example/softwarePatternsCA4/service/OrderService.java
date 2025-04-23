@@ -2,10 +2,13 @@ package com.example.softwarePatternsCA4.service;
 
 import com.example.softwarePatternsCA4.entity.*;
 import com.example.softwarePatternsCA4.factory.OrderItemFactory;
+import com.example.softwarePatternsCA4.observer.OrderEventPublisher;
+import com.example.softwarePatternsCA4.observer.OrderObserver;
 import com.example.softwarePatternsCA4.repository.BookRepository;
 import com.example.softwarePatternsCA4.repository.OrderItemRepository;
 import com.example.softwarePatternsCA4.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,18 +23,27 @@ public class OrderService {
     private final ShoppingCartService cartService;
     private final BookRepository bookRepository;
     private final OrderItemFactory orderItemFactory;
+    private final OrderEventPublisher orderEventPublisher;
+    private final List<OrderObserver> observers;
 
     @Autowired
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         ShoppingCartService cartService,
                         BookRepository bookRepository,
-                        OrderItemFactory orderItemFactory) {
+                        OrderItemFactory orderItemFactory,
+                        OrderEventPublisher orderEventPublisher,
+                        @Lazy List<OrderObserver> observers) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.cartService = cartService;
         this.bookRepository = bookRepository;
         this.orderItemFactory = orderItemFactory;
+        this.orderEventPublisher = orderEventPublisher;
+        this.observers = observers;
+
+        // Register observers on startup
+        observers.forEach(orderEventPublisher::registerObserver);
     }
 
     public Order checkout(CustomerProfile customer, String paymentMethod, String shippingAddress) {
@@ -73,6 +85,9 @@ public class OrderService {
         // Clear cart
         cartService.clearCart(customer);
 
+        // Notify observers (add loyalty points)
+        orderEventPublisher.notifyObservers(order);
+
         return orderRepository.save(order);
     }
 
@@ -81,6 +96,7 @@ public class OrderService {
     }
 
     public Order getOrderById(Long id) {
-        return orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found."));
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found."));
     }
 }
