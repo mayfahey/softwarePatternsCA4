@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Service
 public class OrderService {
 
@@ -28,7 +29,7 @@ public class OrderService {
     private final ShoppingCartService cartService;
     private final BookRepository bookRepository;
     private final OrderItemFactory orderItemFactory;
-    private final OrderEventPublisher orderEventPublisher;
+    private final OrderEventPublisher orderEventPublisher = OrderEventPublisher.getInstance(); //only one global instance
     private final List<OrderObserver> observers;
 
     @Autowired
@@ -37,14 +38,12 @@ public class OrderService {
                         ShoppingCartService cartService,
                         BookRepository bookRepository,
                         OrderItemFactory orderItemFactory,
-                        OrderEventPublisher orderEventPublisher,
                         @Lazy List<OrderObserver> observers) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.cartService = cartService;
         this.bookRepository = bookRepository;
         this.orderItemFactory = orderItemFactory;
-        this.orderEventPublisher = orderEventPublisher;
         this.observers = observers;
 
         // Register observers on startup
@@ -109,4 +108,7 @@ public class OrderService {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found."));
     }
+
 }
+
+
