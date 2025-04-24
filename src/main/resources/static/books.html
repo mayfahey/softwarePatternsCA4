@@ -10,7 +10,7 @@
   </style>
 </head>
 <body>
-  <h2>Book Catalogue</h2>
+  <h2>📚 Book Catalogue</h2>
   
   <button onclick="logout()">🚪 Logout</button>
 
@@ -22,7 +22,7 @@
       <option value="category">Category</option>
       <option value="publisher">Publisher</option>
     </select>
-    <button onclick="searchBooks()">Search</button>
+    <button onclick="searchBooks()">🔍 Search</button>
 
     <select id="sortType" onchange="sortBooks()">
       <option value="">Sort by...</option>
@@ -33,6 +33,8 @@
       <option value="priceasc">Price (Low to High)</option>
       <option value="pricedesc">Price (High to Low)</option>
     </select>
+
+    <button onclick="clearFilters()">🧹 Clear</button>
   </div>
 
   <div id="bookList"></div>
@@ -85,6 +87,12 @@
         .then(data => displayBooks(data));
     }
 
+    function clearFilters() {
+      document.getElementById("searchInput").value = "";
+      document.getElementById("sortType").value = "";
+      fetchBooks();
+    }
+
     function addToCart(bookId) {
       const customerId = localStorage.getItem("customerId");
       if (!customerId) return alert("Not logged in!");
@@ -94,12 +102,12 @@
       }).then(() => alert("Book added to cart!"));
     }
 
-	function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-  	}
-  	
-    fetchBooks(); // load books on page load
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    fetchBooks(); // Initial load
   </script>
 </body>
 </html>

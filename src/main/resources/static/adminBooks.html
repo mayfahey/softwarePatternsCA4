@@ -8,28 +8,13 @@
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f0f0f0; }
+    button, select, input { margin: 5px; padding: 6px 12px; }
 
-    button { margin: 5px; padding: 6px 12px; }
-
-    /* Modal styles */
-    #modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.5);
-    }
+    #modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
     .modal-content {
-      background: white;
-      padding: 20px;
-      margin: 10% auto;
-      width: 500px;
-      border-radius: 8px;
+      background: white; padding: 20px; margin: 10% auto; width: 500px; border-radius: 8px;
     }
-    input, textarea {
-      width: 100%; padding: 8px; margin: 6px 0;
-    }
+    input, textarea { width: 100%; padding: 8px; margin: 6px 0; }
   </style>
 </head>
 <body>
@@ -38,7 +23,28 @@
   <button onclick="openModal()">➕ Add Book</button>
   <button onclick="location.href='adminUsers.html'">👥 View Users</button>
   <button onclick="logout()">🚪 Logout</button>
-  
+
+  <div>
+    <input type="text" id="searchInput" placeholder="Search books..." />
+    <select id="searchType">
+      <option value="title">Title</option>
+      <option value="author">Author</option>
+      <option value="category">Category</option>
+      <option value="publisher">Publisher</option>
+    </select>
+    <button onclick="searchBooks()">🔍 Search</button>
+
+    <select id="sortType" onchange="sortBooks()">
+      <option value="">Sort by...</option>
+      <option value="titleasc">Title (A-Z)</option>
+      <option value="titledesc">Title (Z-A)</option>
+      <option value="authorasc">Author (A-Z)</option>
+      <option value="authordesc">Author (Z-A)</option>
+      <option value="priceasc">Price (Low to High)</option>
+      <option value="pricedesc">Price (High to Low)</option>
+    </select>
+    <button onclick="clearFilters()">🧹 Clear</button>
+  </div>
 
   <table>
     <thead>
@@ -71,9 +77,8 @@
   </div>
 
   <script>
-    // Role check
     if (localStorage.getItem("userRole") !== "ADMIN") {
-      alert("Access denied. You are not an admin.");
+      alert("Access denied.");
       window.location.href = "login.html";
     }
 
@@ -106,11 +111,14 @@
       modal.style.display = "none";
     }
 
-    async function loadBooks() {
-      const res = await fetch("/api/books");
+    async function fetchBooks(url = "/api/books") {
+      const res = await fetch(url);
       const books = await res.json();
-      bookTable.innerHTML = "";
+      displayBooks(books);
+    }
 
+    function displayBooks(books) {
+      bookTable.innerHTML = "";
       books.forEach(book => {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -130,13 +138,12 @@
     async function deleteBook(id) {
       if (confirm("Are you sure you want to delete this book?")) {
         await fetch(`/api/books/${id}`, { method: "DELETE" });
-        loadBooks();
+        fetchBooks();
       }
     }
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const book = {
         title: document.getElementById("title").value,
         author: document.getElementById("author").value,
@@ -148,7 +155,6 @@
         description: document.getElementById("description").value,
         stockQuantity: parseInt(document.getElementById("stockQuantity").value)
       };
-
       const id = document.getElementById("bookId").value;
       const method = id ? "PUT" : "POST";
       const url = id ? `/api/books/${id}` : "/api/books";
@@ -161,18 +167,41 @@
 
       if (res.ok) {
         closeModal();
-        loadBooks();
+        fetchBooks();
       } else {
         alert("Error saving book.");
       }
     });
-    
-    function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-  	}
 
-    loadBooks();
+    function searchBooks() {
+      const input = document.getElementById("searchInput").value.trim();
+      const type = document.getElementById("searchType").value;
+      if (!input) return fetchBooks();
+      fetch(`/api/books/search/${type}?${type}=${input}`)
+        .then(res => res.json())
+        .then(data => displayBooks(data));
+    }
+
+    function sortBooks() {
+      const sort = document.getElementById("sortType").value;
+      if (!sort) return fetchBooks();
+      fetch(`/api/books/sorted?sortType=${sort}`)
+        .then(res => res.json())
+        .then(data => displayBooks(data));
+    }
+
+    function clearFilters() {
+      document.getElementById("searchInput").value = "";
+      document.getElementById("sortType").value = "";
+      fetchBooks();
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    fetchBooks();
   </script>
 </body>
 </html>

@@ -30,22 +30,26 @@
     const customerId = localStorage.getItem("customerId");
 
     async function loadBooks() {
-      const orders = await fetch(`/api/orders/customer?customerId=${customerId}`).then(res => res.json());
-      const books = new Set();
-      orders.forEach(order => {
-        order.items.forEach(item => {
-          books.add(JSON.stringify({ id: item.book.id, title: item.book.title }));
-        });
-      });
+      try {
+        const res = await fetch("/api/books");
+        if (!res.ok) {
+          alert("Failed to load books.");
+          return;
+        }
 
-      const select = document.getElementById("bookSelect");
-      books.forEach(bookJson => {
-        const book = JSON.parse(bookJson);
-        const option = document.createElement("option");
-        option.value = book.id;
-        option.textContent = book.title;
-        select.appendChild(option);
-      });
+        const books = await res.json();
+        const select = document.getElementById("bookSelect");
+
+        books.forEach(book => {
+          const option = document.createElement("option");
+          option.value = book.id;
+          option.textContent = book.title;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        console.error("Error loading books:", err);
+        alert("Error fetching books.");
+      }
     }
 
     document.getElementById("reviewForm").addEventListener("submit", async (e) => {
@@ -54,15 +58,20 @@
       const rating = document.getElementById("rating").value;
       const comment = document.getElementById("comment").value;
 
-      const res = await fetch(`/api/reviews?bookId=${bookId}&customerId=${customerId}&rating=${rating}&comment=${encodeURIComponent(comment)}`, {
-        method: "POST"
-      });
+      try {
+        const res = await fetch(`/api/reviews?bookId=${bookId}&customerId=${customerId}&rating=${rating}&comment=${encodeURIComponent(comment)}`, {
+          method: "POST"
+        });
 
-      if (res.ok) {
-        alert("✅ Review submitted!");
-        location.href = "books.html";
-      } else {
-        alert("Something went wrong. Please try again.");
+        if (res.ok) {
+          alert("✅ Review submitted!");
+          location.href = "books.html";
+        } else {
+          alert("Something went wrong. Please try again.");
+        }
+      } catch (err) {
+        console.error("Review submission error:", err);
+        alert("Error submitting review.");
       }
     });
 
