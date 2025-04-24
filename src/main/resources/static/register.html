@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 50px auto; }
+    input, button { display: block; width: 100%; padding: 10px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Register</h2>
+
+  <form id="registerForm">
+    <input type="text" id="username" placeholder="Username" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <input type="email" id="email" placeholder="Email" required />
+
+    <h3>Shipping Info</h3>
+    <input type="text" id="address" placeholder="Shipping Address" required />
+    <input type="text" id="payment" placeholder="Payment Method" required />
+
+    <button type="submit">Register</button>
+  </form>
+
+  <p><a href="index.html">Back to Home</a></p>
+
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const user = {
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value,
+        email: document.getElementById("email").value,
+      };
+
+      try {
+        //Create User
+        const userRes = await fetch("/api/users/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(user),
+        });
+
+        const userData = await userRes.json();
+        const userId = userData.id;
+
+        //Create Customer Profile
+        const profile = {
+          shippingAddress: document.getElementById("address").value,
+          paymentMethod: document.getElementById("payment").value,
+          loyaltyPoints: 0
+        };
+
+        await fetch(`/api/customer-profiles/create?userId=${userId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profile),
+        });
+
+        //Store the customerId for later use
+        localStorage.setItem("customerId", userId);
+
+        alert("Registered successfully!");
+        window.location.href = "books.html";
+      } catch (err) {
+        console.error(err);
+        alert("Registration failed!");
+      }
+    });
+  </script>
+</body>
+</html>

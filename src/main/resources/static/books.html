@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Browse Books</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .book { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    input, select, button { margin: 5px; padding: 6px; }
+  </style>
+</head>
+<body>
+  <h2>Book Catalogue</h2>
+
+  <div>
+    <input type="text" id="searchInput" placeholder="Search books..." />
+    <select id="searchType">
+      <option value="title">Title</option>
+      <option value="author">Author</option>
+      <option value="category">Category</option>
+      <option value="publisher">Publisher</option>
+    </select>
+    <button onclick="searchBooks()">Search</button>
+
+    <select id="sortType" onchange="sortBooks()">
+      <option value="">Sort by...</option>
+      <option value="titleasc">Title (A-Z)</option>
+      <option value="titledesc">Title (Z-A)</option>
+      <option value="authorasc">Author (A-Z)</option>
+      <option value="authordesc">Author (Z-A)</option>
+      <option value="priceasc">Price (Low to High)</option>
+      <option value="pricedesc">Price (High to Low)</option>
+    </select>
+  </div>
+
+  <div id="bookList"></div>
+
+  <button onclick="location.href='cart.html'">🛒 Go to Cart</button>
+  <button onclick="location.href='review.html'">⭐ Leave a Review</button>
+  <button onclick="location.href='index.html'">⬅ Home</button>
+
+  <script>
+    let books = [];
+
+    async function fetchBooks(url = "/api/books") {
+      const res = await fetch(url);
+      books = await res.json();
+      displayBooks(books);
+    }
+
+    function displayBooks(list) {
+      const container = document.getElementById("bookList");
+      container.innerHTML = "";
+      list.forEach(book => {
+        const div = document.createElement("div");
+        div.className = "book";
+        div.innerHTML = `
+          <strong>${book.title}</strong> by ${book.author}<br>
+          <em>${book.publisher}</em><br>
+          Category: ${book.category}<br>
+          Price: €${book.price.toFixed(2)}<br>
+          <button onclick="addToCart(${book.id})">Add to Cart</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function searchBooks() {
+      const input = document.getElementById("searchInput").value;
+      const type = document.getElementById("searchType").value;
+      if (!input) return fetchBooks();
+
+      fetch(`/api/books/search/${type}?${type}=${input}`)
+        .then(res => res.json())
+        .then(data => displayBooks(data));
+    }
+
+    function sortBooks() {
+      const sort = document.getElementById("sortType").value;
+      if (!sort) return fetchBooks();
+      fetch(`/api/books/sorted?sortType=${sort}`)
+        .then(res => res.json())
+        .then(data => displayBooks(data));
+    }
+
+    function addToCart(bookId) {
+      const customerId = localStorage.getItem("customerId");
+      if (!customerId) return alert("Not logged in!");
+
+      fetch(`/api/cart/add?customerId=${customerId}&bookId=${bookId}&quantity=1`, {
+        method: "POST"
+      }).then(() => alert("Book added to cart!"));
+    }
+
+    fetchBooks(); // load books on page load
+  </script>
+</body>
+</html>

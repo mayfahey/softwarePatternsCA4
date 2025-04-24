@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .section { margin-bottom: 40px; }
+    .item { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+    input, button, select { margin: 5px; padding: 5px; }
+  </style>
+</head>
+<body>
+  <h2>🛠️ Admin Panel</h2>
+
+  <!-- 🔄 BOOK MANAGEMENT -->
+  <div class="section">
+    <h3>📦 Book Stock</h3>
+    <div id="bookList"></div>
+  </div>
+
+  <!-- 👤 CUSTOMER MANAGEMENT -->
+  <div class="section">
+    <h3>👥 Customers</h3>
+    <select id="customerSelect">
+      <option value="">Select a customer</option>
+    </select>
+    <div id="orderList"></div>
+  </div>
+
+  <button onclick="location.href='index.html'">🏠 Back to Home</button>
+
+  <script>
+    async function loadBooks() {
+      const res = await fetch("/api/books");
+      const books = await res.json();
+      const list = document.getElementById("bookList");
+      list.innerHTML = "";
+
+      books.forEach(book => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <strong>${book.title}</strong> — ${book.stockQuantity} in stock<br>
+          Restock: 
+          <input type="number" id="qty-${book.id}" min="1" value="10" />
+          <button onclick="restock(${book.id})">Restock</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    async function restock(bookId) {
+      const qty = document.getElementById(`qty-${bookId}`).value;
+      await fetch(`/api/admin/books/${bookId}/restock?quantity=${qty}`, { method: "PATCH" });
+      alert("Book restocked!");
+      loadBooks();
+    }
+
+    async function loadCustomers() {
+      const res = await fetch("/api/admin/customers");
+      const customers = await res.json();
+      const select = document.getElementById("customerSelect");
+
+      customers.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c.id;
+        option.textContent = `${c.user.username} (${c.user.email})`;
+        select.appendChild(option);
+      });
+
+      select.addEventListener("change", () => {
+        if (select.value) loadOrdersForCustomer(select.value);
+      });
+    }
+
+    async function loadOrdersForCustomer(customerId) {
+      const res = await fetch(`/api/admin/customers/${customerId}/orders`);
+      const orders = await res.json();
+      const container = document.getElementById("orderList");
+      container.innerHTML = "<h4>🧾 Orders:</h4>";
+
+      orders.forEach(order => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <strong>Order #${order.id}</strong> - €${order.totalAmount.toFixed(2)}<br>
+          ${new Date(order.orderDate).toLocaleString()}<br>
+          Payment: ${order.paymentMethod}<br>
+          Shipping: ${order.shippingAddress}<br>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    loadBooks();
+    loadCustomers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Checkout</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, button { width: 100%; padding: 10px; margin: 10px 0; }
+    .summary { background: #f7f7f7; padding: 15px; border: 1px solid #ccc; margin-top: 20px; }
+    .summary p { margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h2>✅ Checkout</h2>
+
+  <form id="checkoutForm">
+    <input type="text" id="address" placeholder="Shipping Address" required />
+    <input type="text" id="payment" placeholder="Payment Method" required />
+    <button type="submit">Place Order</button>
+  </form>
+  <h4>!!!10% off orders over €75, 20% off orders over €150!!!</h4>
+
+  <div class="summary" id="summary" style="display: none;">
+    <h3>💳 Order Summary</h3>
+    <p>Base Total: €<span id="baseTotal">0.00</span></p>
+    <p>Discount: €<span id="discount">0.00</span></p>
+    <p>Loyalty Discount: €<span id="loyalty">0.00</span></p>
+    <hr>
+    <p><strong>Final Total: €<span id="finalTotal">0.00</span></strong></p>
+  </div>
+
+  <button onclick="location.href='cart.html'">⬅ Back to Cart</button>
+  <button onclick="location.href='books.html'">📚 Continue Shopping</button>
+
+  <script>
+    const customerId = localStorage.getItem("customerId");
+
+    document.getElementById("checkoutForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const address = document.getElementById("address").value;
+      const payment = document.getElementById("payment").value;
+
+      try {
+        const res = await fetch(`/api/orders/checkout?customerId=${customerId}&paymentMethod=${encodeURIComponent(payment)}&shippingAddress=${encodeURIComponent(address)}`, {
+          method: "POST"
+        });
+
+        if (res.ok) {
+          alert("🎉 Order placed successfully!");
+          window.location.href = "review.html";
+        } else {
+          alert("Something went wrong. Try again.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error placing order.");
+      }
+    });
+
+    async function loadSummary() {
+      const cartRes = await fetch(`/api/cart/items?customerId=${customerId}`);
+      const items = await cartRes.json();
+
+      let baseTotal = 0;
+      items.forEach(item => {
+        baseTotal += item.priceAtTime * item.quantity;
+      });
+
+      const discount =
+        baseTotal >= 150 ? baseTotal * 0.20 :
+        baseTotal >= 75 ? baseTotal * 0.10 : 0;
+
+      const profileRes = await fetch(`/api/customer-profiles/${customerId}`);
+      const profile = await profileRes.json();
+      const loyaltyPoints = profile.loyaltyPoints || 0;
+      const loyaltyDiscount = loyaltyPoints * 0.01;
+
+      const finalTotal = Math.max(0, baseTotal - discount - loyaltyDiscount);
+
+      // Inject into page
+      document.getElementById("baseTotal").textContent = baseTotal.toFixed(2);
+      document.getElementById("discount").textContent = discount.toFixed(2);
+      document.getElementById("loyalty").textContent = loyaltyDiscount.toFixed(2);
+      document.getElementById("finalTotal").textContent = finalTotal.toFixed(2);
+
+      document.getElementById("summary").style.display = "block";
+    }
+
+    // Autofill shipping/payment
+    fetch(`/api/customer-profiles/by-user/${customerId}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("address").value = data.shippingAddress;
+        document.getElementById("payment").value = data.paymentMethod;
+      });
+
+    loadSummary();
+  </script>
+</body>
+</html>
