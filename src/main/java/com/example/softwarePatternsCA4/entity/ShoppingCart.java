@@ -3,7 +3,10 @@ package com.example.softwarePatternsCA4.entity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "shopping_carts")
@@ -19,7 +22,8 @@ public class ShoppingCart {
     private CustomerProfile customer;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CartItem> items;
+    @JsonManagedReference
+    private List<CartItem> items = new ArrayList<>();
 
     private BigDecimal total;
 

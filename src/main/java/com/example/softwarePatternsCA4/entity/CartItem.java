@@ -3,6 +3,8 @@ package com.example.softwarePatternsCA4.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 @Table(name = "cart_items")
 public class CartItem {
@@ -62,6 +64,7 @@ public class CartItem {
 
     @ManyToOne
     @JoinColumn(name = "cart_id")
+    @JsonBackReference
     private ShoppingCart cart;
 
     public CartItem() {}

@@ -3,7 +3,9 @@ package com.example.softwarePatternsCA4.controller;
 import com.example.softwarePatternsCA4.entity.User;
 import com.example.softwarePatternsCA4.entity.User.Role;
 import com.example.softwarePatternsCA4.service.UserService;
+import com.example.softwarePatternsCA4.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +17,12 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserRepository userRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     // Register a new user
@@ -56,4 +60,12 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+    
+    @GetMapping("/login")
+    public ResponseEntity<User> login(@RequestParam String username, @RequestParam String password) {
+        return userRepository.findByUsernameAndPassword(username, password)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    }
+
 }
