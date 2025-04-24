@@ -6,6 +6,7 @@
   <style>
     body { font-family: sans-serif; max-width: 500px; margin: 50px auto; }
     input, button { display: block; width: 100%; padding: 10px; margin: 10px 0; }
+    a { text-align: center; display: block; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -17,7 +18,7 @@
     <button type="submit">Login</button>
   </form>
 
-  <p><a href="index.html">⬅ Back to Home</a></p>
+  <a href="register.html">🆕 Don’t have an account? Register here</a>
 
   <script>
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -27,19 +28,24 @@
 
       try {
         const userRes = await fetch(`/api/users/login?username=${username}&password=${password}`);
-        
         if (!userRes.ok) throw new Error("Login failed");
 
         const user = await userRes.json();
-        const userId = user.id;
+        localStorage.setItem("userId", user.id);
+        localStorage.setItem("userRole", user.role);
 
-        // Get associated customer profile
-        const profileRes = await fetch(`/api/customer-profiles/by-user/${userId}`);
-        const profile = await profileRes.json();
-
-        localStorage.setItem("customerId", profile.id);
-        alert("Login successful!");
-        window.location.href = "books.html";
+        if (user.role === "CUSTOMER") {
+          const profileRes = await fetch(`/api/customer-profiles/by-user/${user.id}`);
+          const profile = await profileRes.json();
+          localStorage.setItem("customerId", profile.id);
+          alert("Login successful!");
+          window.location.href = "books.html";
+        } else if (user.role === "ADMIN") {
+          alert("Welcome, Admin!");
+          window.location.href = "adminBooks.html";
+        } else {
+          alert("Unknown role. Access denied.");
+        }
       } catch (err) {
         console.error(err);
         alert("Invalid username or password.");

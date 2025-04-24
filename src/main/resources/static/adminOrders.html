@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - User Orders</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: auto; padding: 20px; }
+    .order { border: 1px solid #ccc; margin: 15px 0; padding: 15px; }
+    .order h4 { margin: 0 0 10px; }
+    button { padding: 6px 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>🧾 Orders for Selected User</h2>
+  <div id="ordersContainer"></div>
+
+  <button onclick="location.href='adminUsers.html'">⬅ Back to Users</button>
+  <button onclick="logout()">🚪 Logout</button>
+
+  <script>
+    // Admin-only access
+    if (localStorage.getItem("userRole") !== "ADMIN") {
+      alert("Access denied. You are not an admin.");
+      window.location.href = "login.html";
+    }
+
+    const userId = localStorage.getItem("selectedUserId");
+    const container = document.getElementById("ordersContainer");
+
+    async function loadOrders() {
+      console.log("👉 Selected User ID:", userId);
+
+      if (!userId) {
+        container.innerHTML = "<p>No user selected.</p>";
+        return;
+      }
+
+      try {
+        // get customer profile by userId
+        const profileRes = await fetch(`/api/customer-profiles/by-user/${userId}`);
+        if (!profileRes.ok) throw new Error("Failed to fetch customer profile");
+
+        const profile = await profileRes.json();
+        console.log("✅ Customer Profile:", profile);
+
+        // get orders using profile ID
+        const ordersRes = await fetch(`/api/admin/customers/${profile.id}/orders`);
+        if (!ordersRes.ok) throw new Error("Failed to fetch orders");
+
+        const orders = await ordersRes.json();
+        console.log("📦 Orders:", orders);
+
+        // Display orders
+        if (!orders || orders.length === 0) {
+          container.innerHTML = "<p>This user has no orders.</p>";
+          return;
+        }
+
+        container.innerHTML = "";
+        orders.forEach(order => {
+          const div = document.createElement("div");
+          div.className = "order";
+          div.innerHTML = `
+            <h4>🧾 Order #${order.id} | ${new Date(order.orderDate).toLocaleString()}</h4>
+            <p><strong>Total:</strong> €${order.totalAmount.toFixed(2)}</p>
+            <p><strong>Payment:</strong> ${order.paymentMethod}</p>
+            <p><strong>Shipping:</strong> ${order.shippingAddress}</p>
+            <button onclick="goToOrderDetails(${order.id})">👁 View Details</button>
+          `;
+          container.appendChild(div);
+        });
+
+      } catch (err) {
+        console.error("❌ Error loading orders:", err.message);
+        container.innerHTML = `<p>Error: ${err.message}</p>`;
+      }
+    }
+
+    function goToOrderDetails(orderId) {
+      localStorage.setItem("selectedOrderId", orderId);
+      window.location.href = "adminOrderDetails.html";
+    }
+
+	function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  	}
+  	
+    loadOrders();
+  </script>
+</body>
+</html>

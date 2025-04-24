@@ -25,7 +25,7 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
-    // Register a new user
+    //register new user
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         if (userService.usernameExists(user.getUsername())) {
@@ -35,10 +35,15 @@ public class UserController {
             return ResponseEntity.badRequest().body("Email already registered.");
         }
 
-        user.setRole(Role.CUSTOMER); // Default role
+        // validate role
+        if (user.getRole() == null) {
+            user.setRole(Role.CUSTOMER); // default
+        }
+
         User savedUser = userService.createUser(user);
         return ResponseEntity.ok(savedUser);
     }
+
 
     // Get all users
     @GetMapping

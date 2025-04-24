@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order Details</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    h2, h3 { margin-bottom: 10px; }
+    button { margin-top: 20px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h2>📄 Order Details</h2>
+  
+  <button onclick="logout()">🚪 Logout</button>
+
+  <div id="summary"></div>
+
+  <h3>📚 Items</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th><th>Quantity</th><th>Unit Price</th><th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody id="itemsTable"></tbody>
+  </table>
+
+  <button onclick="location.href='adminOrders.html'">⬅ Back to Orders</button>
+
+  <script>
+    // Admin-only access
+    if (localStorage.getItem("userRole") !== "ADMIN") {
+      alert("Access denied. You are not an admin.");
+      window.location.href = "login.html";
+    }
+
+    const orderId = localStorage.getItem("selectedOrderId");
+    const summary = document.getElementById("summary");
+    const itemsTable = document.getElementById("itemsTable");
+
+    async function loadOrderDetails() {
+      if (!orderId) {
+        summary.innerHTML = "<p>No order selected.</p>";
+        return;
+      }
+
+      const res = await fetch(`/api/orders/${orderId}`);
+      if (!res.ok) {
+        summary.innerHTML = "<p>Error loading order.</p>";
+        return;
+      }
+
+      const order = await res.json();
+      console.log("🧾 Order Loaded:", order);
+
+      // Summary section
+      summary.innerHTML = `
+        <p><strong>Order ID:</strong> ${order.id}</p>
+        <p><strong>Date:</strong> ${new Date(order.orderDate).toLocaleString()}</p>
+        <p><strong>Total:</strong> €${(order.totalAmount ?? 0).toFixed(2)}</p>
+        <p><strong>Payment:</strong> ${order.paymentMethod}</p>
+        <p><strong>Shipping Address:</strong> ${order.shippingAddress}</p>
+      `;
+
+      // Table of items
+      order.items.forEach(item => {
+		  const title = item.book?.title ?? "Unknown";
+		  const quantity = item.quantity ?? item.book?.quantity ?? 0;
+		  const price = item.priceAtTime ?? item.book?.price ?? 0;
+		  const subtotal = price * quantity;
+		
+		  const row = document.createElement("tr");
+		  row.innerHTML = `
+		    <td>${title}</td>
+		    <td>${quantity}</td>
+		    <td>€${price.toFixed(2)}</td>
+		    <td>€${subtotal.toFixed(2)}</td>
+		  `;
+		  itemsTable.appendChild(row);
+	   });
+
+    }
+    
+    function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  	}
+
+    loadOrderDetails();
+  </script>
+</body>
+</html>

@@ -11,6 +11,8 @@
 </head>
 <body>
   <h2>Book Catalogue</h2>
+  
+  <button onclick="logout()">🚪 Logout</button>
 
   <div>
     <input type="text" id="searchInput" placeholder="Search books..." />
@@ -92,6 +94,11 @@
       }).then(() => alert("Book added to cart!"));
     }
 
+	function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  	}
+  	
     fetchBooks(); // load books on page load
   </script>
 </body>

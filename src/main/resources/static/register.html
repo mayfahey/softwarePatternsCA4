@@ -5,25 +5,27 @@
   <title>Register</title>
   <style>
     body { font-family: sans-serif; max-width: 500px; margin: 50px auto; }
-    input, button { display: block; width: 100%; padding: 10px; margin: 10px 0; }
+    input, select, button { display: block; width: 100%; padding: 10px; margin: 10px 0; }
   </style>
 </head>
 <body>
-  <h2>Register</h2>
+  <h2>🆕 Register</h2>
 
   <form id="registerForm">
     <input type="text" id="username" placeholder="Username" required />
     <input type="password" id="password" placeholder="Password" required />
     <input type="email" id="email" placeholder="Email" required />
 
-    <h3>Shipping Info</h3>
-    <input type="text" id="address" placeholder="Shipping Address" required />
-    <input type="text" id="payment" placeholder="Payment Method" required />
+    <label for="role">Register as:</label>
+    <select id="role" required>
+      <option value="CUSTOMER">Customer</option>
+      <option value="ADMIN">Admin</option>
+    </select>
 
     <button type="submit">Register</button>
   </form>
 
-  <p><a href="index.html">Back to Home</a></p>
+  <p><a href="login.html">🔐 Back to Login</a></p>
 
   <script>
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
@@ -33,10 +35,10 @@
         username: document.getElementById("username").value,
         password: document.getElementById("password").value,
         email: document.getElementById("email").value,
+        role: document.getElementById("role").value
       };
 
       try {
-        //Create User
         const userRes = await fetch("/api/users/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -45,25 +47,35 @@
 
         const userData = await userRes.json();
         const userId = userData.id;
+        const userRole = userData.role;
 
-        //Create Customer Profile
-        const profile = {
-          shippingAddress: document.getElementById("address").value,
-          paymentMethod: document.getElementById("payment").value,
-          loyaltyPoints: 0
-        };
+        localStorage.setItem("userId", userId);
+        localStorage.setItem("userRole", userRole);
 
-        await fetch(`/api/customer-profiles/create?userId=${userId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(profile),
-        });
+        if (userRole === "CUSTOMER") {
+          // Create empty profile
+          const profile = {
+            shippingAddress: "",
+            paymentMethod: "",
+            loyaltyPoints: 0
+          };
 
-        //Store the customerId for later use
-        localStorage.setItem("customerId", userId);
+          const profileRes = await fetch(`/api/customer-profiles/create?userId=${userId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(profile),
+          });
 
-        alert("Registered successfully!");
-        window.location.href = "books.html";
+          const profileData = await profileRes.json();
+          localStorage.setItem("customerId", profileData.id);
+
+          alert("Customer registered successfully!");
+          window.location.href = "books.html";
+        } else if (userRole === "ADMIN") {
+          alert("Admin registered successfully!");
+          window.location.href = "adminBooks.html";
+        }
+
       } catch (err) {
         console.error(err);
         alert("Registration failed!");
