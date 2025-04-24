@@ -58,21 +58,23 @@ public class OrderService {
             throw new RuntimeException("Cart is empty.");
         }
 
-        // Decorator Pattern - apply dynamic discounts
+        // all decorators applied
         PriceCalculator calculator = new BasePriceCalculator(cart);
-        calculator = new PercentageDiscountDecorator(calculator, BigDecimal.valueOf(0.10)); // 10% off for promo
-        calculator = new LoyaltyDiscountDecorator(calculator, customer); // loyalty points based discount
+        calculator = new PercentageDiscountDecorator(calculator); // automatically decides discount based on total
+        calculator = new LoyaltyDiscountDecorator(calculator, customer); // subtracts €0.01 per point
 
-        // Create new Order
+        BigDecimal finalTotal = calculator.calculateTotal();
+
+        // create new Order
         Order order = new Order();
         order.setOrderDate(LocalDateTime.now());
-        order.setTotalAmount(calculator.calculateTotal()); // gets total including discount
+        order.setTotalAmount(finalTotal);
         order.setPaymentMethod(paymentMethod);
         order.setShippingAddress(shippingAddress);
         order.setCustomer(customer);
         order = orderRepository.save(order);
 
-        // Convert CartItems to OrderItems using factory pattern
+        // Convert CartItems to OrderItems
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem item : cartItems) {
             OrderItem orderItem = orderItemFactory.create(item.getBook(), item.getQuantity(), order);
@@ -91,14 +93,20 @@ public class OrderService {
         orderItemRepository.saveAll(orderItems);
         order.setItems(orderItems);
 
-        // Clear cart
-        cartService.clearCart(customer);
+        // Calculate and update loyalty points
+        BigDecimal baseTotal = new BasePriceCalculator(cart).calculateTotal(); // get pre-discount value
+        int pointsEarned = baseTotal.setScale(0, BigDecimal.ROUND_DOWN).intValue(); // 1 point per € spent
+        int pointsUsed = customer.getLoyaltyPoints(); // we subtract them all
+        int updatedPoints = Math.max(0, pointsEarned - pointsUsed);
+        customer.setLoyaltyPoints(updatedPoints);
 
-        // Notify observers (add loyalty points)
+        // Clear cart and notify observers
+        cartService.clearCart(customer);
         orderEventPublisher.notifyObservers(order);
 
         return orderRepository.save(order);
     }
+
 
     public List<Order> getOrdersByCustomer(CustomerProfile customer) {
         return orderRepository.findByCustomer(customer);

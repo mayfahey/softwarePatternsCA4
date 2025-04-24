@@ -19,9 +19,9 @@ public class LoyaltyDiscountDecorator implements PriceCalculator {
         BigDecimal baseTotal = wrappedCalculator.calculateTotal();
 
         int loyaltyPoints = customer.getLoyaltyPoints();
-        BigDecimal discountRate = BigDecimal.valueOf(Math.min(loyaltyPoints / 10, 30)).divide(BigDecimal.valueOf(100)); // Max 30%
+        BigDecimal loyaltyDiscount = BigDecimal.valueOf(loyaltyPoints).multiply(BigDecimal.valueOf(0.01));
 
-        BigDecimal discountAmount = baseTotal.multiply(discountRate);
-        return baseTotal.subtract(discountAmount);
+        BigDecimal finalTotal = baseTotal.subtract(loyaltyDiscount);
+        return finalTotal.max(BigDecimal.ZERO); // no negative totals
     }
 }

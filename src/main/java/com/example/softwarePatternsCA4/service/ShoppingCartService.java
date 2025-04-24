@@ -95,4 +95,23 @@ public class ShoppingCartService {
         cart.setTotal(BigDecimal.ZERO);
         cartRepository.save(cart);
     }
+    
+    public ShoppingCart updateItemQuantity(CustomerProfile customer, Long bookId, int quantity) {
+        ShoppingCart cart = getOrCreateCart(customer);
+        List<CartItem> items = cartItemRepository.findByCart(cart);
+
+        for (CartItem item : items) {
+            if (item.getBook().getId().equals(bookId)) {
+                if (quantity <= 0) {
+                    cartItemRepository.delete(item); // remove if zero or negative
+                } else {
+                    item.setQuantity(quantity);
+                    cartItemRepository.save(item);
+                }
+                break;
+            }
+        }
+        return updateCartTotal(cart);
+    }
+
 }

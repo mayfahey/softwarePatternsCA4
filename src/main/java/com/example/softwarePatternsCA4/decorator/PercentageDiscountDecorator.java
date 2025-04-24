@@ -5,16 +5,22 @@ import java.math.BigDecimal;
 public class PercentageDiscountDecorator implements PriceCalculator {
 
     private final PriceCalculator wrappedCalculator;
-    private final BigDecimal discountPercent; // 0.10 for 10% etc
 
-    public PercentageDiscountDecorator(PriceCalculator wrappedCalculator, BigDecimal discountPercent) {
+    public PercentageDiscountDecorator(PriceCalculator wrappedCalculator) {
         this.wrappedCalculator = wrappedCalculator;
-        this.discountPercent = discountPercent;
     }
 
     @Override
     public BigDecimal calculateTotal() {
         BigDecimal baseTotal = wrappedCalculator.calculateTotal();
+
+        BigDecimal discountPercent = BigDecimal.ZERO;
+        if (baseTotal.compareTo(BigDecimal.valueOf(150)) >= 0) {
+            discountPercent = BigDecimal.valueOf(0.20); // 20% off
+        } else if (baseTotal.compareTo(BigDecimal.valueOf(75)) >= 0) {
+            discountPercent = BigDecimal.valueOf(0.10); // 10% off
+        }
+
         BigDecimal discountAmount = baseTotal.multiply(discountPercent);
         return baseTotal.subtract(discountAmount);
     }

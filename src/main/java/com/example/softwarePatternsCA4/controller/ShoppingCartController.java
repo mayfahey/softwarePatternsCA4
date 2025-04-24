@@ -72,4 +72,17 @@ public class ShoppingCartController {
         cartService.clearCart(customerOpt.get());
         return ResponseEntity.ok("Cart cleared.");
     }
+    
+    // Update number of items
+    @PutMapping("/update-quantity")
+    public ResponseEntity<?> updateQuantity(@RequestParam Long customerId,
+                                            @RequestParam Long bookId,
+                                            @RequestParam int quantity) {
+        Optional<CustomerProfile> customerOpt = customerProfileService.getProfileById(customerId);
+        if (customerOpt.isEmpty()) return ResponseEntity.badRequest().body("Customer not found");
+
+        ShoppingCart cart = cartService.updateItemQuantity(customerOpt.get(), bookId, quantity);
+        return ResponseEntity.ok(cart);
+    }
+
 }
